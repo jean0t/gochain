@@ -10,29 +10,29 @@ import (
 
 //====================================================== Data declaration
 type Data struct {
-    value float64
-    from string
-    to string
+    Value float64
+    From string
+    To string
 }
 
 type Node struct {
-    parent [32]byte
-    timestamp int64
-    data Data
-    signature [32]byte
+    Parent string
+    Timestamp int64
+    Data Data
+    Signature string
 }
 
 type Chain struct {
-    nodes []Node
-    length int
+    Nodes []Node
+    Length int
 }
 
-func (c *Chain) GetLastElementSignature() [32]byte {
-    return c.nodes[c.length-1].signature
+func (c *Chain) GetLastElementSignature() string {
+    return c.Nodes[c.Length-1].Signature
 }
 
 func (c *Chain) PrintChain() {
-    jsonData, err := json.MarshalIndent(c.nodes, "", " ")
+    jsonData, err := json.MarshalIndent(c.Nodes, "", " ")
     if err != nil {
         return
     }
@@ -43,18 +43,18 @@ func (c *Chain) PrintChain() {
 func (c *Chain) AddNode(info Data) bool {
     var timeNow int64 = time.Now().UnixNano()
     var newNode Node = Node{
-    parent: c.GetLastElementSignature(),
-    timestamp: timeNow,
-    data: info,
-    signature: sha256.Sum256([]byte(fmt.Sprintf("from %s - to %s - value %.4f - time %d", info.from, info.to, info.value, timeNow)))}
+    Parent: c.GetLastElementSignature(),
+    Timestamp: timeNow,
+    Data: info,
+    Signature: fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("from %s - to %s - value %.4f - time %d", info.From, info.To, info.Value, timeNow))))}
 
 
-    c.nodes = append(c.nodes, newNode)
-    c.length++
+    c.Nodes = append(c.Nodes, newNode)
+    c.Length++
     return true
 }
 
-func (c *Chain) Save(data Chain) error {
+func (c *Chain) Save() error {
     file, err := os.Create("GoChain.json")
     if err != nil {
         return err
@@ -63,7 +63,7 @@ func (c *Chain) Save(data Chain) error {
 
     var encoder *json.Encoder = json.NewEncoder(file)
     encoder.SetIndent("", " ")
-    return encoder.Encode(data)
+    return encoder.Encode(c)
 }
 
 func (c *Chain) Load() (error) {
@@ -80,17 +80,18 @@ func (c *Chain) Load() (error) {
 
 //======================================================| Creation of the chain
 var genesisBlock = Node{
-    parent: [32]byte{},
-    timestamp: time.Now().UnixNano(),
-    data: Data{value: 30000, from: "jean0t", to: "jean0t"},
-    signature: sha256.Sum256([]byte("this is the first operation of the chain :)")),
+    Parent: "",
+    Timestamp: time.Now().UnixNano(),
+    Data: Data{Value: 30000, From: "creator", To: "jean0t"},
+    Signature: fmt.Sprintf("%x", sha256.Sum256([]byte("this is the first operation of the chain :)"))),
 }
 
 func CreateData(fromAccount, toAccount string, valueExchanged float64) Data {
-    var data Data = Data{from: fromAccount, to: toAccount, value: valueExchanged}
+    var data Data = Data{From: fromAccount, To: toAccount, Value: valueExchanged}
     return data
 }
 
-func CreateChain() *Chain {
-    return &Chain{nodes: []Node{genesisBlock}, length: 1}
+func CreateChain() {
+    var tmp Chain = Chain{Nodes: []Node{genesisBlock}, Length: 1}
+    tmp.Save()
 }
